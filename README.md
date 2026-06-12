@@ -16,3 +16,6 @@ explanation of the main drivers.
   Not redistributed here, per the DHS data-use agreement.
 - **Maternal vitals dataset** (model training): fetched automatically in the notebook
   via the `ucimlrepo` package.
+
+  Link to the design
+  https://www.figma.com/design/p1Lj83MuduKd8hHHd0ZUQE/Pregnacare?node-id=0-1&t=EMDEGTRp59hnQxQL-1
