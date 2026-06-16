@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { translations } from "./translations";
+import { saveReading } from "./lib/db";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
@@ -13,8 +14,7 @@ type Result = {
 const accent: Record<string, string> = { low: "bg-emerald-600", mid: "bg-amber-500", high: "bg-red-600" };
 const meterPos: Record<string, string> = { low: "16%", mid: "50%", high: "84%" };
 
-export default function App() {
-  const [lang, setLang] = useState<Lang>("en");
+export default function App({ lang = "en" }: { lang?: Lang }) {
   const [form, setForm] = useState<Record<string, string>>({});
   const [result, setResult] = useState<Result | null>(null);
   const [loading, setLoading] = useState(false);
@@ -71,7 +71,23 @@ export default function App() {
         setError(t.serverError);
         return;
       }
-      setResult(await res.json());
+      const data = await res.json();
+      setResult(data);
+      try {
+        await saveReading(
+          {
+            age: Number(form.age),
+            systolic_bp: Number(form.systolic_bp),
+            diastolic_bp: Number(form.diastolic_bp),
+            blood_sugar: Number(form.blood_sugar),
+            body_temp_c: Number(form.body_temp_c),
+            heart_rate: Number(form.heart_rate),
+          },
+          data
+        );
+      } catch (e) {
+        console.error("Could not save reading:", e); // never blocks the result
+      }
     } catch {
       setError(t.error);
     } finally {
@@ -101,32 +117,7 @@ export default function App() {
   const rec: Record<string, string> = { low: t.recLow, mid: t.recMid, high: t.recHigh };
 
   return (
-    <div className="min-h-screen bg-canvas text-stone-800">
-      <header className="border-b border-stone-200 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-2">
-            <svg viewBox="0 0 24 24" className="h-6 w-6 text-primary" fill="none"
-                 stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 12h4l2-5 4 10 2-5h6" />
-            </svg>
-            <span className="text-xl font-semibold text-primary">
-              {t.appName}
-            </span>
-          </div>
-          <div className="flex gap-1 text-sm">
-            {(["en", "rw"] as Lang[]).map((l) => (
-              <button key={l} onClick={() => setLang(l)}
-                className={`rounded-md px-2.5 py-1 ${
-                  lang === l ? "bg-primary text-white" : "text-stone-500 hover:bg-stone-100"
-                }`}>
-                {l.toUpperCase()}
-              </button>
-            ))}
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-5xl px-6 py-10">
+    <main className="mx-auto max-w-5xl px-5 py-8 text-stone-800">
         <h1 className="text-3xl font-semibold text-stone-900">{t.tagline}</h1>
 
         <div className="mt-8 grid gap-6 md:grid-cols-2">
@@ -200,6 +191,5 @@ export default function App() {
           </section>
         </div>
       </main>
-    </div>
   );
 }
