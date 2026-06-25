@@ -162,7 +162,6 @@ export default function App({ lang = "en" }: { lang?: Lang }) {
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 text-stone-800 sm:px-5">
       <header className="border-b border-stone-200 pb-6">
-        <span className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{t.appName}</span>
         <h1 className="mt-2 max-w-2xl font-display text-3xl font-semibold leading-tight text-stone-900 sm:text-4xl">
           {t.tagline}
         </h1>

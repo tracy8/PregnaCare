@@ -28,8 +28,6 @@ const S = {
     m2: "Blood sugar", m2tool: "Glucometer + strips",
     m3: "Body temperature", m3tool: "Thermometer",
     m4: "Heart rate", m4tool: "BP monitor or pulse",
-    measureNote: "Plus your age and how far along you are — no tools needed.",
-
     featuresTitle: "Everything you need, in one place",
     f1t: "Risk in seconds",
     f1d: "Six simple readings give an instant, model-backed check you can understand.",
@@ -217,7 +215,6 @@ export default function Welcome({ onStart }: { onStart: (m: "login" | "signup") 
             </div>
           ))}
         </div>
-        <p className="mt-5 text-center text-sm text-stone-400">{t.measureNote}</p>
       </section>
 
       {/* Features */}

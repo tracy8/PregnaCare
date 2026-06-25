@@ -9,11 +9,13 @@
   --color-tertiary: #945941;
   --color-tertiary-dark: #7c4a36;
   --color-canvas: #f9f8f6;
-  --color-sage: #e4efe9;
 
   /* Typography */
   --font-sans: "Public Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+}
+
+html {
+  font-size: 18px;
 }
 
 body {
