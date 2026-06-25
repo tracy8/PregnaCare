@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../lib/auth";
 
 type Lang = "en" | "rw";
+type Mode = "login" | "signup" | "reset";
 
 const S = {
   en: {
@@ -35,6 +36,12 @@ const S = {
     checkEmail: "Almost there — check your email to confirm your account, then log in.",
     namePh: "e.g. Tracy Uwase",
     phonePh: "0780 000 000",
+    forgot: "Forgot password?",
+    resetTitle: "Reset your password",
+    resetSub: "Enter your email and we'll send you a reset link.",
+    sendReset: "Send reset link",
+    resetSent: "Check your email for a link to reset your password.",
+    backToLogin: "Back to log in",
   },
   rw: {
     appName: "PregnaCare",
@@ -67,6 +74,12 @@ const S = {
     checkEmail: "Hafi gusoza — reba imeyili yawe wemeze konti, hanyuma winjire.",
     namePh: "urugero: Tracy Uwase",
     phonePh: "0780 000 000",
+    forgot: "Wibagiwe ijambo ry'ibanga?",
+    resetTitle: "Hindura ijambo ry'ibanga",
+    resetSub: "Andika imeyili yawe tukoherereze umuhora wo guhindura.",
+    sendReset: "Ohereza umuhora",
+    resetSent: "Reba imeyili yawe ubone umuhora wo guhindura ijambo ry'ibanga.",
+    backToLogin: "Subira ku kwinjira",
   },
 };
 
@@ -84,9 +97,9 @@ const FEATURES = {
 };
 
 export default function Auth({ initialMode = "login", onBack }: { initialMode?: "login" | "signup"; onBack?: () => void } = {}) {
-  const { signUp, signIn } = useAuth();
+  const { signUp, signIn, resetPassword } = useAuth();
   const [lang, setLang] = useState<Lang>("en");
-  const [mode, setMode] = useState<"login" | "signup">(initialMode);
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [form, setForm] = useState<Record<string, string>>({ trimester: "" });
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -94,10 +107,24 @@ export default function Auth({ initialMode = "login", onBack }: { initialMode?: 
   const t = S[lang];
 
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const switchMode = (m: Mode) => { setMode(m); setError(""); setNotice(""); };
 
   const submit = async () => {
     setError("");
     setNotice("");
+
+    if (mode === "reset") {
+      if (!form.email) { setError(t.fillRequired); return; }
+      setBusy(true);
+      try {
+        const { error } = await resetPassword(form.email);
+        if (error) setError(error);
+        else setNotice(t.resetSent);
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
 
     if (mode === "login" && (!form.email || !form.password)) {
       setError(t.fillRequired);
@@ -134,9 +161,15 @@ export default function Auth({ initialMode = "login", onBack }: { initialMode?: 
     "rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-base text-stone-900 " +
     "placeholder:text-stone-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30";
 
+  const heading =
+    mode === "login" ? t.welcome : mode === "signup" ? t.start : t.resetTitle;
+  const subheading =
+    mode === "login" ? t.welcomeSub : mode === "signup" ? t.startSub : t.resetSub;
+  const submitLabel =
+    busy ? t.working : mode === "login" ? t.doLogin : mode === "signup" ? t.doSignup : t.sendReset;
+
   return (
     <div className="grid min-h-screen md:grid-cols-2">
-      {/* Brand panel — hidden on small screens, shown from md up */}
       <aside className="relative hidden flex-col justify-between overflow-hidden bg-primary p-12 text-white md:flex">
         <div className="relative z-10 flex items-center gap-2">
           <Heartbeat />
@@ -170,14 +203,11 @@ export default function Auth({ initialMode = "login", onBack }: { initialMode?: 
         <div className="pointer-events-none absolute -right-10 -top-20 h-56 w-56 rounded-full border border-white/10" />
       </aside>
 
-      {/* Form panel */}
       <main className="flex items-center justify-center bg-canvas px-5 py-10">
         <div className="w-full max-w-sm">
           {onBack && (
-            <button
-              onClick={onBack}
-              className="mb-5 flex items-center gap-1.5 text-sm font-medium text-stone-500 hover:text-stone-800"
-            >
+            <button onClick={onBack}
+              className="mb-5 flex items-center gap-1.5 text-sm font-medium text-stone-500 hover:text-stone-800">
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor"
                    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M15 18l-6-6 6-6" />
@@ -193,28 +223,23 @@ export default function Auth({ initialMode = "login", onBack }: { initialMode?: 
             <LangToggle lang={lang} setLang={setLang} />
           </div>
 
-          <div className="mb-7 flex gap-1 rounded-xl bg-stone-200/70 p-1">
-            {(["login", "signup"] as const).map((m) => (
-              <button
-                key={m}
-                onClick={() => { setMode(m); setError(""); setNotice(""); }}
-                className={`flex-1 rounded-lg py-2 text-sm font-medium transition ${
-                  mode === m ? "bg-white text-stone-900 shadow-sm" : "text-stone-500"
-                }`}
-              >
-                {m === "login" ? t.login : t.signup}
-              </button>
-            ))}
-          </div>
+          {mode !== "reset" && (
+            <div className="mb-7 flex gap-1 rounded-xl bg-stone-200/70 p-1">
+              {(["login", "signup"] as const).map((m) => (
+                <button key={m} onClick={() => switchMode(m)}
+                  className={`flex-1 rounded-lg py-2 text-sm font-medium transition ${
+                    mode === m ? "bg-white text-stone-900 shadow-sm" : "text-stone-500"
+                  }`}>
+                  {m === "login" ? t.login : t.signup}
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="mb-6 hidden items-center justify-between md:flex">
             <div>
-              <h2 className="text-2xl font-semibold text-stone-900">
-                {mode === "login" ? t.welcome : t.start}
-              </h2>
-              <p className="mt-1 text-sm text-stone-500">
-                {mode === "login" ? t.welcomeSub : t.startSub}
-              </p>
+              <h2 className="text-2xl font-semibold text-stone-900">{heading}</h2>
+              <p className="mt-1 text-sm text-stone-500">{subheading}</p>
             </div>
             <LangToggle lang={lang} setLang={setLang} />
           </div>
@@ -228,8 +253,7 @@ export default function Auth({ initialMode = "login", onBack }: { initialMode?: 
             )}
             {mode === "signup" && (
               <Field label={t.phone} hint={t.optional}>
-                <input className={inputCls} inputMode="tel" autoComplete="tel"
-                  placeholder={t.phonePh}
+                <input className={inputCls} inputMode="tel" autoComplete="tel" placeholder={t.phonePh}
                   value={form.phone ?? ""} onChange={(e) => set("phone", e.target.value)} />
               </Field>
             )}
@@ -238,12 +262,20 @@ export default function Auth({ initialMode = "login", onBack }: { initialMode?: 
                 placeholder="you@example.com"
                 value={form.email ?? ""} onChange={(e) => set("email", e.target.value)} />
             </Field>
-            <Field label={t.password} required>
-              <input className={inputCls} type="password"
-                autoComplete={mode === "login" ? "current-password" : "new-password"}
-                placeholder="••••••••"
-                value={form.password ?? ""} onChange={(e) => set("password", e.target.value)} />
-            </Field>
+            {mode !== "reset" && (
+              <Field label={t.password} required>
+                <input className={inputCls} type="password"
+                  autoComplete={mode === "login" ? "current-password" : "new-password"}
+                  placeholder="••••••••"
+                  value={form.password ?? ""} onChange={(e) => set("password", e.target.value)} />
+              </Field>
+            )}
+            {mode === "login" && (
+              <button type="button" onClick={() => switchMode("reset")}
+                className="-mt-1 self-end text-sm font-medium text-primary hover:underline">
+                {t.forgot}
+              </button>
+            )}
             {mode === "signup" && (
               <Field label={t.trimester} hint={t.optional}>
                 <select className={inputCls} value={form.trimester}
@@ -258,44 +290,33 @@ export default function Auth({ initialMode = "login", onBack }: { initialMode?: 
           </div>
 
           {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
-          {notice && (
-            <p className="mt-3 rounded-lg bg-primary/10 p-3 text-sm text-primary">{notice}</p>
-          )}
+          {notice && <p className="mt-3 rounded-lg bg-primary/10 p-3 text-sm text-primary">{notice}</p>}
 
-          <button
-            onClick={submit}
-            disabled={busy}
-            className="mt-6 w-full rounded-lg bg-primary py-3 font-medium text-white transition hover:bg-primary-dark disabled:opacity-60"
-          >
-            {busy ? t.working : mode === "login" ? t.doLogin : t.doSignup}
+          <button onClick={submit} disabled={busy}
+            className="mt-6 w-full rounded-lg bg-primary py-3 font-medium text-white transition hover:bg-primary-dark disabled:opacity-60">
+            {submitLabel}
           </button>
 
-          <p className="mt-5 text-center text-sm text-stone-500">
-            {mode === "login" ? t.noAccount : t.haveAccount}{" "}
-            <button
-              onClick={() => setMode(mode === "login" ? "signup" : "login")}
-              className="font-semibold text-primary"
-            >
-              {mode === "login" ? t.signup : t.login}
-            </button>
-          </p>
+          {mode === "reset" ? (
+            <p className="mt-5 text-center text-sm text-stone-500">
+              <button onClick={() => switchMode("login")} className="font-semibold text-primary">{t.backToLogin}</button>
+            </p>
+          ) : (
+            <p className="mt-5 text-center text-sm text-stone-500">
+              {mode === "login" ? t.noAccount : t.haveAccount}{" "}
+              <button onClick={() => switchMode(mode === "login" ? "signup" : "login")}
+                className="font-semibold text-primary">
+                {mode === "login" ? t.signup : t.login}
+              </button>
+            </p>
+          )}
         </div>
       </main>
     </div>
   );
 }
 
-function Field({
-  label,
-  required,
-  hint,
-  children,
-}: {
-  label: string;
-  required?: boolean;
-  hint?: string;
-  children: React.ReactNode;
-}) {
+function Field({ label, required, hint, children }: { label: string; required?: boolean; hint?: string; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-1.5 text-sm font-medium text-stone-600">
       <span>
@@ -330,9 +351,7 @@ function LangToggle({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => void 
     <div className="flex gap-1 text-sm">
       {(["en", "rw"] as Lang[]).map((l) => (
         <button key={l} onClick={() => setLang(l)}
-          className={`rounded-md px-2.5 py-1 ${
-            lang === l ? "bg-primary text-white" : "text-stone-500 hover:bg-stone-100"
-          }`}>
+          className={`rounded-md px-2.5 py-1 ${lang === l ? "bg-primary text-white" : "text-stone-500 hover:bg-stone-100"}`}>
           {l.toUpperCase()}
         </button>
       ))}
