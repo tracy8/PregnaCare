@@ -14,10 +14,6 @@
   --font-sans: "Public Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
-/* html {
-  font-size: 14px;
-} */
-
 body {
   font-family: var(--font-sans);
 }

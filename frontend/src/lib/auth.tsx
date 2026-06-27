@@ -22,7 +22,7 @@ type AuthState = {
   user: User | null;
   loading: boolean;
   recovery: boolean;
-  signUp: (a: SignUpArgs) => Promise<{ error?: string; needsConfirm?: boolean }>;
+  signUp: (a: SignUpArgs) => Promise<{ error?: string }>;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error?: string }>;
@@ -48,8 +48,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  const signUp: AuthState["signUp"] = async (a) => {
-    const { data, error } = await supabase.auth.signUp({
+const signUp: AuthState["signUp"] = async (a) => {
+    const { error } = await supabase.auth.signUp({
       email: a.email,
       password: a.password,
       options: {
@@ -62,7 +62,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     });
     if (error) return { error: error.message };
-    if (data.user && !data.session) return { needsConfirm: true };
     return {};
   };
 

@@ -140,8 +140,8 @@ export default function Auth({ initialMode = "login", onBack }: { initialMode?: 
       if (mode === "login") {
         const { error } = await signIn(form.email ?? "", form.password ?? "");
         if (error) setError(error);
-      } else {
-        const { error, needsConfirm } = await signUp({
+       } else {
+          const { error } = await signUp({
           email: form.email ?? "",
           password: form.password ?? "",
           fullName: form.fullName ?? "",
@@ -150,7 +150,6 @@ export default function Auth({ initialMode = "login", onBack }: { initialMode?: 
           language: lang,
         });
         if (error) setError(error);
-        else if (needsConfirm) setNotice(t.checkEmail);
       }
     } finally {
       setBusy(false);
